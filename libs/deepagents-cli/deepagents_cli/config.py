@@ -7,11 +7,31 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
-import dotenv
-from langchain_core.language_models import BaseChatModel
-from rich.console import Console
+try:  # pragma: no cover - optional dependency
+    import dotenv
+except ImportError:  # pragma: no cover - handled in check_cli_dependencies
+    dotenv = None
 
-dotenv.load_dotenv()
+try:  # pragma: no cover - optional dependency
+    from langchain_core.language_models import BaseChatModel
+except ImportError:  # pragma: no cover - minimal stub for tests
+    class BaseChatModel:  # type: ignore[override]
+        ...
+
+try:  # pragma: no cover - optional dependency
+    from rich.console import Console
+except ImportError:  # pragma: no cover - minimal fallback for tests
+    class Console:  # type: ignore[misc]
+        def __init__(self, *args, **kwargs):  # noqa: D401
+            """Simplified console shim."""
+
+        def print(self, *args, **kwargs):  # noqa: D401
+            """Fallback print."""
+
+            print(*args)
+
+if dotenv:
+    dotenv.load_dotenv()
 
 # Color scheme
 COLORS = {

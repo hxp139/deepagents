@@ -87,6 +87,7 @@ Example skills are provided in the `examples/skills/` directory:
 
 - **web-research** - Structured web research workflow with planning, parallel delegation, and synthesis
 - **langgraph-docs** - LangGraph documentation lookup and guidance
+- **ecommerce-research** - End-to-end browsing research playbook for product sites, including multi-keyword backlogs and resumable outputs
 
 To use an example skill with the default agent, copy it to your agent's skills directory:
 
@@ -114,6 +115,32 @@ deepagents skills create my-skill
 # View detailed information about a skill
 deepagents skills info web-research
 ```
+
+## E-commerce research command (non-interactive)
+
+The CLI ships with a streamlined, non-interactive runner to operationalize the
+`ecommerce-research` workflow without entering the chat loop.
+
+```bash
+# Single keyword
+deepagents ecommerce-research --keywords "wireless earbuds" --workspace ./runs/earbuds
+
+# Multi-keyword backlog from file (one keyword per line), resume-safe
+deepagents ecommerce-research \
+  --keywords-file keywords.txt \
+  --workspace ./runs/holiday-gadgets \
+  --max-results 8 \
+  --fetch-pages \
+  --site amazon.com
+```
+
+The command creates a dedicated workspace containing:
+
+- `context.md` — prompt for goals/inputs/limits
+- `status.json` — queue/active/done tracking per keyword (resume-aware)
+- `results_<keyword>.md` — per-keyword tables and blockers
+- `pages/<keyword>/` — optional fetched markdown snapshots from search results
+- `summary.md` — roll-up of keyword progress
 
 ## Development
 
