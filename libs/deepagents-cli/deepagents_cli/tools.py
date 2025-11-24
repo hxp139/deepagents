@@ -2,14 +2,29 @@
 
 from typing import Any, Literal
 
-import requests
-from markdownify import markdownify
-from tavily import TavilyClient
+try:  # pragma: no cover - optional dependency
+    import requests
+except ImportError:  # pragma: no cover
+    requests = None
+
+try:  # pragma: no cover - optional dependency
+    from markdownify import markdownify
+except ImportError:  # pragma: no cover
+    markdownify = None
+
+try:  # pragma: no cover - optional dependency
+    from tavily import TavilyClient
+except ImportError:  # pragma: no cover
+    TavilyClient = None
 
 from deepagents_cli.config import settings
 
-# Initialize Tavily client if API key is available
-tavily_client = TavilyClient(api_key=settings.tavily_api_key) if settings.has_tavily else None
+# Initialize Tavily client if API key and dependency are available
+tavily_client = (
+    TavilyClient(api_key=settings.tavily_api_key)
+    if settings.has_tavily and TavilyClient
+    else None
+)
 
 
 def http_request(
@@ -33,6 +48,14 @@ def http_request(
     Returns:
         Dictionary with response data including status, headers, and content
     """
+    if requests is None:
+        return {
+            "success": False,
+            "status_code": 0,
+            "headers": {},
+            "content": "requests dependency is not installed",
+            "url": url,
+        }
     try:
         kwargs = {"url": url, "method": method.upper(), "timeout": timeout}
 
@@ -162,6 +185,12 @@ def fetch_url(url: str, timeout: int = 30) -> dict[str, Any]:
     3. Synthesize this into a clear, natural language response
     4. NEVER show the raw markdown to the user unless specifically requested
     """
+    if requests is None or markdownify is None:
+        return {
+            "error": "requests/markdownify dependencies are not installed",
+            "url": url,
+        }
+
     try:
         response = requests.get(
             url,

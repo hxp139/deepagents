@@ -92,6 +92,48 @@ def parse_args():
         "--target", dest="source_agent", help="Copy prompt from another agent"
     )
 
+    # E-commerce research command (non-interactive)
+    ecommerce_parser = subparsers.add_parser(
+        "ecommerce-research",
+        help="Run multi-keyword e-commerce browsing research and persist artifacts",
+    )
+    ecommerce_parser.add_argument(
+        "--keywords",
+        nargs="+",
+        default=[],
+        help="One or more keywords to research (space-delimited)",
+    )
+    ecommerce_parser.add_argument(
+        "--keywords-file",
+        help="Path to a file containing keywords (one per line)",
+    )
+    ecommerce_parser.add_argument(
+        "--workspace",
+        type=Path,
+        default=Path.cwd() / "ecommerce_research",
+        help="Workspace directory to store context, status, and results",
+    )
+    ecommerce_parser.add_argument(
+        "--max-results",
+        type=int,
+        default=5,
+        help="Maximum search results to capture per keyword",
+    )
+    ecommerce_parser.add_argument(
+        "--fetch-pages",
+        action="store_true",
+        help="Fetch page markdown for each search result and store under workspace/pages",
+    )
+    ecommerce_parser.add_argument(
+        "--site",
+        help="Optional site/domain constraint (adds site:<domain> to each query)",
+    )
+    ecommerce_parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume from existing status.json and skip completed keywords",
+    )
+
     # Skills command - setup delegated to skills module
     setup_skills_parser(subparsers)
 
@@ -385,6 +427,38 @@ def cli_main() -> None:
             list_agents()
         elif args.command == "reset":
             reset_agent(args.agent, args.source_agent)
+        elif args.command == "ecommerce-research":
+            from deepagents_cli.ecommerce_research import run_cli_ecommerce_research
+
+            keywords: list[str] = []
+            if args.keywords:
+                keywords.extend(args.keywords)
+            if args.keywords_file:
+                file_keywords = [
+                    line.strip()
+                    for line in Path(args.keywords_file).read_text().splitlines()
+                    if line.strip()
+                ]
+                keywords.extend(file_keywords)
+
+            if not keywords:
+                console.print(
+                    "[bold red]Error:[/bold red] At least one keyword is required. Use --keywords or --keywords-file."
+                )
+                sys.exit(1)
+
+            try:
+                run_cli_ecommerce_research(
+                    keywords,
+                    args.workspace,
+                    max_results=args.max_results,
+                    fetch_pages=args.fetch_pages,
+                    site=args.site,
+                    resume=args.resume,
+                )
+            except Exception as exc:  # pragma: no cover - surfaced to CLI
+                console.print(f"[bold red]Error:[/bold red] {exc}")
+                sys.exit(1)
         elif args.command == "skills":
             execute_skills_command(args)
         else:
